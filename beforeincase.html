@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets Go Value Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333333;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            margin: 20px;
+            background-color: #262626;
+        }
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .item {
+            border: 5px solid #454545;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            background: #7289DA; 
+            border-radius: 20px;
+            color: #c7c7c7;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .controls input, .controls select {
+            padding: 10px;
+            margin: 5px;
+            width: 300px;
+            text-align: center;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+        .item-value {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pets Go Value Tracker</h1>
+
+        <div class="controls">
+            <input type="text" id="searchBar" placeholder="Search by Name" oninput="filterAndSortItems()" />
+            <select id="sortSelect" onchange="filterAndSortItems()">
+                <option value="percentAsc">Sort by Percent Margin (Ascending)</option>
+                <option value="percentDesc">Sort by Percent Margin (Descending)</option>
+                <option value="gemsAsc">Sort by Gems Margin (Ascending)</option>
+                <option value="gemsDesc">Sort by Gems Margin (Descending)</option>
+            </select>
+        </div>
+
+        <div class="item-list" id="itemList"></div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+
+    <script>
+        const FILE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpoZM3_Ve84CmHGnu4g5pZybj7WHwKdn4jIjopQeu9Z7MzKRktxNtrCFEolhe29jG1twwdaoClI1BT/pub?output=tsv';
+
+        let items = [];
+
+        async function fetchSpreadsheet() {
+            try {
+                const response = await fetch(FILE_URL);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                return data;
+            } catch (error) {
+                console.error('Error fetching or parsing the spreadsheet:', error);
+                alert('Error fetching data. Please try again later.');
+                return [];
+            }
+        }
+
+        function formatNumber(number) {
+            if (isNaN(number)) return number;
+
+            const isNegative = number < 0;
+            number = Math.abs(number);
+
+            let formattedNumber;
+            if (number >= 1e9) formattedNumber = (number / 1e9).toFixed(1) + 'B';
+            else if (number >= 1e6) formattedNumber = (number / 1e6).toFixed(1) + 'M';
+            else if (number >= 1e3) formattedNumber = (number / 1e3).toFixed(1) + 'K';
+            else formattedNumber = number.toString();
+
+            return isNegative ? `-${formattedNumber}` : formattedNumber;
+        }
+
+        async function initialize() {
+            const data = await fetchSpreadsheet();
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const name = row[1]; 
+                const currentValue = parseFloat(row[2].toString().replace(/,/g, '')); 
+                const value10Min = parseFloat(row[6].toString().replace(/,/g, '')); 
+                const value20Min = parseFloat(row[7].toString().replace(/,/g, '')); 
+
+                if (!name || isNaN(currentValue) || isNaN(value10Min)) continue;
+
+                const percentMargin = ((currentValue - value10Min) / value10Min) * 100;
+                const gemsMargin = currentValue - value10Min;
+
+                items.push({
+                    name,
+                    currentValue,
+                    value10Min,
+                    value20Min,
+                    percentMargin: percentMargin.toFixed(2), 
+                    gemsMargin: gemsMargin.toFixed(2), 
+                });
+            }
+
+            filterAndSortItems(); 
+        }
+
+        function displayItems(filteredItems) {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = ''; 
+
+            filteredItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('item');
+                itemDiv.onclick = () => {
+                    localStorage.setItem('selectedItem', JSON.stringify(item));
+                    window.location.href = 'details.html'; 
+                };
+
+                const name = document.createElement('span');
+                name.textContent = `${item.name} (Percent Margin: ${item.percentMargin}%)`;
+                name.classList.add('item-name');
+
+                const currentValue = document.createElement('span');
+                currentValue.textContent = `Current Value: ${formatNumber(item.currentValue)} 💎`;
+                currentValue.classList.add('item-value');
+
+                const gems = document.createElement('span');
+                gems.textContent = `Gems Margin: ${formatNumber(item.gemsMargin)}`;
+
+                itemDiv.appendChild(name);
+                itemDiv.appendChild(currentValue);
+                itemDiv.appendChild(gems);
+                itemList.appendChild(itemDiv);
+            });
+        }
+
+        function filterAndSortItems() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchTerm));
+
+            const sortOrder = document.getElementById('sortSelect').value;
+
+            if (sortOrder === 'percentAsc') filteredItems.sort((a, b) => parseFloat(b.percentMargin) - parseFloat(a.percentMargin));
+            else if (sortOrder === 'percentDesc') filteredItems.sort((a, b) => parseFloat(a.percentMargin) - parseFloat(b.percentMargin));
+            else if (sortOrder === 'gemsAsc') filteredItems.sort((a, b) => parseFloat(b.gemsMargin) - parseFloat(a.gemsMargin));
+            else if (sortOrder === 'gemsDesc') filteredItems.sort((a, b) => parseFloat(a.gemsMargin) - parseFloat(b.gemsMargin));
+
+            displayItems(filteredItems);
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets Go Value Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333333;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            margin: 20px;
+            background-color: #262626;
+        }
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .item {
+            border: 5px solid #454545;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            background: #7289DA; 
+            border-radius: 20px;
+            color: #c7c7c7;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .controls input, .controls select {
+            padding: 10px;
+            margin: 5px;
+            width: 300px;
+            text-align: center;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+        .item-value {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pets Go Value Tracker</h1>
+
+        <!-- Search and Sort Controls -->
+        <div class="controls">
+            <input type="text" id="searchBar" placeholder="Search by Name" oninput="filterAndSortItems()" />
+            <select id="sortSelect" onchange="filterAndSortItems()">
+                <option value="percentAsc">Sort by Percent Margin (Ascending)</option>
+                <option value="percentDesc">Sort by Percent Margin (Descending)</option>
+                <option value="gemsAsc">Sort by Gems Margin (Ascending)</option>
+                <option value="gemsDesc">Sort by Gems Margin (Descending)</option>
+            </select>
+        </div>
+
+        <!-- List of Items -->
+        <div class="item-list" id="itemList"></div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+
+    <script>
+        const FILE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpoZM3_Ve84CmHGnu4g5pZybj7WHwKdn4jIjopQeu9Z7MzKRktxNtrCFEolhe29jG1twwdaoClI1BT/pub?output=tsv'; // URL to your hosted spreadsheet
+
+        let items = [];
+
+        // Function to fetch spreadsheet data
+        async function fetchSpreadsheet() {
+            try {
+                const response = await fetch(FILE_URL);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                return data;
+            } catch (error) {
+                console.error('Error fetching or parsing the spreadsheet:', error);
+                alert('Error fetching data. Please try again later.');
+                return [];
+            }
+        }
+
+        // Format large numbers with K, M, B (thousands, millions, billions)
+        function formatNumber(number) {
+            if (isNaN(number)) return number;
+
+            const isNegative = number < 0; // Check if the number is negative
+            number = Math.abs(number); // Work with the absolute value for formatting
+
+            let formattedNumber;
+
+            if (number >= 1e9) {
+                formattedNumber = (number / 1e9).toFixed(1) + 'B';
+            } else if (number >= 1e6) {
+                formattedNumber = (number / 1e6).toFixed(1) + 'M';
+            } else if (number >= 1e3) {
+                formattedNumber = (number / 1e3).toFixed(1) + 'K';
+            } else {
+                formattedNumber = number.toString();
+            }
+
+            return isNegative ? `-${formattedNumber}` : formattedNumber; // Add the negative sign back if it was negative
+        }
+
+        // Initialize and populate the item list
+        async function initialize() {
+            const data = await fetchSpreadsheet();
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const name = row[1]; // Column B (Item Name)
+                const currentValue = parseFloat(row[2].toString().replace(/,/g, '')); // Column C (Current Value)
+                const value3Hrs = parseFloat(row[6].toString().replace(/,/g, '')); // Column G (3 Hours Ago)
+                const value2Hrs = parseFloat(row[7].toString().replace(/,/g, '')); // Column H (2 Hours Ago)
+                const value1Hr = parseFloat(row[8].toString().replace(/,/g, '')); // Column I (1 Hour Ago)
+
+                if (!name || isNaN(currentValue) || isNaN(value1Hr)) continue; // Skip incomplete data
+
+                const percentMargin = ((currentValue - value1Hr) / value1Hr) * 100; // Percentage change from 1 hour ago
+                const gemsMargin = currentValue - value1Hr; // Gems change from 1 hour ago
+
+                items.push({
+                    name,
+                    currentValue,
+                    value3Hrs,
+                    value2Hrs,
+                    value1Hr,
+                    percentMargin: percentMargin.toFixed(2), // Format margin
+                    gemsMargin: gemsMargin.toFixed(2), // Format margin
+                });
+            }
+
+            // Retrieve saved search and sort values from localStorage
+            const savedSearchTerm = localStorage.getItem('searchTerm');
+            const savedSortOrder = localStorage.getItem('sortOrder');
+
+            // Set saved values if available
+            if (savedSearchTerm) {
+                document.getElementById('searchBar').value = savedSearchTerm;
+            }
+
+            if (savedSortOrder) {
+                document.getElementById('sortSelect').value = savedSortOrder;
+            }
+
+            filterAndSortItems(); // Apply filtering and sorting together
+        }
+
+        // Function to display items on the page
+        function displayItems(filteredItems) {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = ''; // Clear the list first
+
+            // Display each item in the list
+            filteredItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('item');
+                itemDiv.onclick = () => {
+                    localStorage.setItem('selectedItem', JSON.stringify(item));
+                    window.location.href = 'details.html'; // Navigate to details page
+                };
+
+                const name = document.createElement('span');
+                name.textContent = `${item.name} (Percent Margin: ${item.percentMargin}%)`;
+                name.classList.add('item-name');
+
+                const currentValue = document.createElement('span');
+                currentValue.textContent = `Current Value: ${formatNumber(item.currentValue)} 💎`;
+                currentValue.classList.add('item-value');
+
+                const gems = document.createElement('span');
+                gems.textContent = `Gems Margin: ${formatNumber(item.gemsMargin)}`;
+
+                itemDiv.appendChild(name);
+                itemDiv.appendChild(currentValue);
+                itemDiv.appendChild(gems);
+                itemList.appendChild(itemDiv);
+            });
+        }
+
+        // Function to filter and sort items
+        function filterAndSortItems() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchTerm));
+
+            // Save search term to localStorage
+            localStorage.setItem('searchTerm', searchTerm);
+
+            const sortOrder = document.getElementById('sortSelect').value;
+            // Sort filtered items based on the selected sort order
+            if (sortOrder === 'percentAsc') {
+                filteredItems.sort((a, b) => parseFloat(b.percentMargin) - parseFloat(a.percentMargin)); // Descending Percent
+            } else if (sortOrder === 'percentDesc') {
+                filteredItems.sort((a, b) => parseFloat(a.percentMargin) - parseFloat(b.percentMargin)); // Ascending Percent
+            } else if (sortOrder === 'gemsAsc') {
+                filteredItems.sort((a, b) => parseFloat(b.gemsMargin) - parseFloat(a.gemsMargin)); // Descending Gems
+            } else if (sortOrder === 'gemsDesc') {
+                filteredItems.sort((a, b) => parseFloat(a.gemsMargin) - parseFloat(b.gemsMargin)); // Ascending Gems
+            }
+
+            // Save sort order to localStorage
+            localStorage.setItem('sortOrder', sortOrder);
+
+            // Display the filtered and sorted items
+            displayItems(filteredItems);
+        }
+
+        // Initialize the page
+        initialize();
+    </script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets Go Value Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333333;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            margin: 20px;
+            background-color: #262626;
+        }
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .item {
+            border: 5px solid #454545;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            background: #7289DA; 
+            border-radius: 20px;
+            color: #c7c7c7;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .controls input, .controls select {
+            padding: 10px;
+            margin: 5px;
+            width: 300px;
+            text-align: center;
+        }
+        .item-name {
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+        .item-value {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pets Go Value Tracker</h1>
+
+        <div class="controls">
+            <input type="text" id="searchBar" placeholder="Search by Name" oninput="filterAndSortItems()" />
+            <select id="sortSelect" onchange="filterAndSortItems()">
+                <option value="percentAsc">Sort by Percent Margin (Ascending)</option>
+                <option value="percentDesc">Sort by Percent Margin (Descending)</option>
+                <option value="gemsAsc">Sort by Gems Margin (Ascending)</option>
+                <option value="gemsDesc">Sort by Gems Margin (Descending)</option>
+            </select>
+        </div>
+
+        <div class="item-list" id="itemList"></div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+
+    <script>
+        const FILE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRpoZM3_Ve84CmHGnu4g5pZybj7WHwKdn4jIjopQeu9Z7MzKRktxNtrCFEolhe29jG1twwdaoClI1BT/pub?output=tsv';
+
+        let items = [];
+
+        async function fetchSpreadsheet() {
+            try {
+                const response = await fetch(FILE_URL);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                return data;
+            } catch (error) {
+                console.error('Error fetching or parsing the spreadsheet:', error);
+                alert('Error fetching data. Please try again later.');
+                return [];
+            }
+        }
+
+        function formatNumber(number) {
+            if (isNaN(number)) return number;
+
+            const isNegative = number < 0;
+            number = Math.abs(number);
+
+            let formattedNumber;
+            if (number >= 1e9) formattedNumber = (number / 1e9).toFixed(1) + 'B';
+            else if (number >= 1e6) formattedNumber = (number / 1e6).toFixed(1) + 'M';
+            else if (number >= 1e3) formattedNumber = (number / 1e3).toFixed(1) + 'K';
+            else formattedNumber = number.toString();
+
+            return isNegative ? `-${formattedNumber}` : formattedNumber;
+        }
+
+        async function initialize() {
+            const data = await fetchSpreadsheet();
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const name = row[1]; 
+                const currentValue = parseFloat(row[2].toString().replace(/,/g, '')); 
+                const value10Min = parseFloat(row[6].toString().replace(/,/g, '')); 
+                const value20Min = parseFloat(row[7].toString().replace(/,/g, '')); 
+                const value30Min = parseFloat(row[8].toString().replace(/,/g, '')); 
+                const value40Min = parseFloat(row[9].toString().replace(/,/g, '')); 
+                const value50Min = parseFloat(row[10].toString().replace(/,/g, '')); 
+                const value60Min = parseFloat(row[11].toString().replace(/,/g, '')); 
+                const value2Hrs = parseFloat(row[12].toString().replace(/,/g, '')); 
+                const value4Hrs = parseFloat(row[13].toString().replace(/,/g, '')); 
+                const value6Hrs = parseFloat(row[14].toString().replace(/,/g, '')); 
+                const value8Hrs = parseFloat(row[15].toString().replace(/,/g, '')); 
+                const value10Hrs = parseFloat(row[16].toString().replace(/,/g, '')); 
+                const value12Hrs = parseFloat(row[17].toString().replace(/,/g, '')); 
+
+                if (!name || isNaN(currentValue) || isNaN(value10Min)) continue;
+
+                const percentMargin = ((currentValue - value30Min) / value30Min) * 100;
+                const gemsMargin = currentValue - value30Min;
+
+                items.push({
+                    name,
+                    currentValue,
+                    value10Min,
+                    value20Min,
+                    value30Min,
+                    value40Min,
+                    value50Min,
+                    value60Min,
+                    value2Hrs,
+                    value4Hrs,
+                    value6Hrs,
+                    value8Hrs,
+                    value10Hrs,
+                    value12Hrs,
+                    percentMargin: percentMargin.toFixed(2), 
+                    gemsMargin: gemsMargin.toFixed(2), 
+                });
+            }
+
+            filterAndSortItems(); 
+        }
+
+        function displayItems(filteredItems) {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = ''; 
+
+            filteredItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('item');
+                itemDiv.onclick = () => {
+                    localStorage.setItem('selectedItem', JSON.stringify(item));
+                    window.location.href = 'details.html'; 
+                };
+
+                const name = document.createElement('span');
+                name.textContent = `${item.name} (Percent Margin: ${item.percentMargin}%)`;
+                name.classList.add('item-name');
+
+                const currentValue = document.createElement('span');
+                currentValue.textContent = `Current Value: ${formatNumber(item.currentValue)} 💎`;
+                currentValue.classList.add('item-value');
+
+                const gems = document.createElement('span');
+                gems.textContent = `Gems Margin: ${formatNumber(item.gemsMargin)}`;
+
+                itemDiv.appendChild(name);
+                itemDiv.appendChild(currentValue);
+                itemDiv.appendChild(gems);
+                itemList.appendChild(itemDiv);
+            });
+        }
+
+        function filterAndSortItems() {
+            const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+            const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchTerm));
+
+            const sortOrder = document.getElementById('sortSelect').value;
+
+            if (sortOrder === 'percentAsc') filteredItems.sort((a, b) => parseFloat(b.percentMargin) - parseFloat(a.percentMargin));
+            else if (sortOrder === 'percentDesc') filteredItems.sort((a, b) => parseFloat(a.percentMargin) - parseFloat(b.percentMargin));
+            else if (sortOrder === 'gemsAsc') filteredItems.sort((a, b) => parseFloat(b.gemsMargin) - parseFloat(a.gemsMargin));
+            else if (sortOrder === 'gemsDesc') filteredItems.sort((a, b) => parseFloat(a.gemsMargin) - parseFloat(b.gemsMargin));
+
+            displayItems(filteredItems);
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

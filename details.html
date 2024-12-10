@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Value Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            margin: 20px;
+            background-color: #262626;
+        }
+        #valueChart {
+            max-width: 100%;
+            max-height: 86%;
+            
+        }
+        .back-button {
+            padding: 10px;
+            background-color: #7289DA;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .back-button:hover {
+            background-color: #5b6e9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Items Gem Value Graph</h1>
+        <canvas id="valueChart" width="3200" height="1600"></canvas>
+        <div class="back-button" onclick="goBack()">Back to List</div>
+    </div>
+
+    <!-- Include Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Get the selected item from localStorage
+        const selectedItem = JSON.parse(localStorage.getItem('selectedItem'));
+
+        // Prepare the historical data for the chart, corresponding to columns G to R
+        const labels = [
+            '12 Hours Ago', '10 Hours Ago', '8 Hours Ago', '6 Hours Ago',
+            '4 Hours Ago', '2 Hours Ago', '60 Min Ago', '50 Min Ago',
+            '40 Min Ago', '30 Min Ago', '20 Min Ago', '10 Min Ago', 'Gem Value'
+        ];
+
+        // Data from the columns G (10 mins ago) to R (12 hours ago)
+        const data = [
+            selectedItem.value12Hrs,  // Value from Column G: 12 Hours Ago
+            selectedItem.value10Hrs,  // Value from Column H: 10 Hours Ago
+            selectedItem.value8Hrs,   // Value from Column I: 8 Hours Ago
+            selectedItem.value6Hrs,   // Value from Column J: 6 Hours Ago
+            selectedItem.value4Hrs,   // Value from Column K: 4 Hours Ago
+            selectedItem.value2Hrs,   // Value from Column L: 2 Hours Ago
+            selectedItem.value60Min,  // Value from Column M: 60 minutes ago
+            selectedItem.value50Min,  // Value from Column N: 50 minutes ago
+            selectedItem.value40Min,  // Value from Column O: 40 minutes ago
+            selectedItem.value30Min,  // Value from Column P: 30 minutes ago
+            selectedItem.value20Min,  // Value from Column Q: 20 minutes ago
+            selectedItem.value10Min,  // Value from Column R: 10 minutes ago
+            selectedItem.currentValue // Current Value from Column S
+        ];
+
+        // Wait for Chart.js to load before creating the chart
+        window.onload = function() {
+            const ctx = document.getElementById('valueChart').getContext('2d');
+            const valueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Value Over Time (Gems)',
+                        data: data,
+                        borderColor: '#7289DA',
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value); // Format numbers
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        // Format large numbers with K, M, B (thousands, millions, billions)
+        function formatNumber(number) {
+            if (isNaN(number)) return number;
+
+            const isNegative = number < 0; // Check if the number is negative
+            number = Math.abs(number); // Work with the absolute value for formatting
+
+            let formattedNumber;
+
+            if (number >= 1e9) {
+                formattedNumber = (number / 1e9).toFixed(1) + 'B';
+            } else if (number >= 1e6) {
+                formattedNumber = (number / 1e6).toFixed(1) + 'M';
+            } else if (number >= 1e3) {
+                formattedNumber = (number / 1e3).toFixed(1) + 'K';
+            } else {
+                formattedNumber = number.toString();
+            }
+
+            return isNegative ? `-${formattedNumber}` : formattedNumber; // Add the negative sign back if it was negative
+        }
+
+        // Back to the previous page
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
