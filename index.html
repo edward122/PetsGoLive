@@ -114,18 +114,26 @@
                 const row = data[i];
                 const name = row[1]; 
                 const currentValue = parseFloat(row[2].toString().replace(/,/g, '')); 
-                const value10Min = parseFloat(row[6].toString().replace(/,/g, '')); 
-                const value20Min = parseFloat(row[7].toString().replace(/,/g, '')); 
-                const value30Min = parseFloat(row[8].toString().replace(/,/g, '')); 
-                const value40Min = parseFloat(row[9].toString().replace(/,/g, '')); 
-                const value50Min = parseFloat(row[10].toString().replace(/,/g, '')); 
-                const value60Min = parseFloat(row[11].toString().replace(/,/g, '')); 
-                const value2Hrs = parseFloat(row[12].toString().replace(/,/g, '')); 
-                const value4Hrs = parseFloat(row[13].toString().replace(/,/g, '')); 
-                const value6Hrs = parseFloat(row[14].toString().replace(/,/g, '')); 
-                const value8Hrs = parseFloat(row[15].toString().replace(/,/g, '')); 
-                const value10Hrs = parseFloat(row[16].toString().replace(/,/g, '')); 
-                const value12Hrs = parseFloat(row[17].toString().replace(/,/g, '')); 
+                const value2Min = parseFloat(row[6].toString().replace(/,/g, '')); 
+                const value4Min = parseFloat(row[7].toString().replace(/,/g, '')); 
+                const value6Min = parseFloat(row[8].toString().replace(/,/g, '')); 
+                const value8Min = parseFloat(row[9].toString().replace(/,/g, '')); 
+                const value10Min = parseFloat(row[10].toString().replace(/,/g, '')); 
+                const value20Min = parseFloat(row[11].toString().replace(/,/g, '')); 
+                const value30Min = parseFloat(row[12].toString().replace(/,/g, '')); 
+                const value40Min = parseFloat(row[13].toString().replace(/,/g, '')); 
+                const value50Min = parseFloat(row[14].toString().replace(/,/g, ''));
+                const value1Hrs = parseFloat(row[15].toString().replace(/,/g, '')); 
+                const value2Hrs = parseFloat(row[16].toString().replace(/,/g, '')); 
+                const value3Hrs = parseFloat(row[17].toString().replace(/,/g, '')); 
+                const value4Hrs = parseFloat(row[18].toString().replace(/,/g, '')); 
+                const value5Hrs = parseFloat(row[19].toString().replace(/,/g, '')); 
+                const value6Hrs = parseFloat(row[20].toString().replace(/,/g, '')); 
+                const value7Hrs = parseFloat(row[21].toString().replace(/,/g, '')); 
+                const value8Hrs = parseFloat(row[22].toString().replace(/,/g, '')); 
+                const value9Hrs = parseFloat(row[23].toString().replace(/,/g, '')); 
+                const value10Hrs = parseFloat(row[24].toString().replace(/,/g, '')); 
+                const value11Hrs = parseFloat(row[25].toString().replace(/,/g, '')); 
 
                 if (!name || isNaN(currentValue) || isNaN(value10Min)) continue;
 
@@ -135,18 +143,26 @@
                 items.push({
                     name,
                     currentValue,
+                    value2Min,
+                    value4Min,
+                    value6Min,
+                    value8Min,
                     value10Min,
                     value20Min,
                     value30Min,
                     value40Min,
                     value50Min,
-                    value60Min,
+                    value1Hrs,
                     value2Hrs,
+                    value3Hrs,
                     value4Hrs,
+                    value5Hrs,
                     value6Hrs,
+                    value7Hrs,
                     value8Hrs,
+                    value9Hrs,
                     value10Hrs,
-                    value12Hrs,
+                    value11Hrs,
                     percentMargin: percentMargin.toFixed(2), 
                     gemsMargin: gemsMargin.toFixed(2), 
                 });
