@@ -194,9 +194,14 @@
                 const gems = document.createElement('span');
                 gems.textContent = `Gems Margin: ${formatNumber(item.gemsMargin)}`;
 
+                const myPrice = document.createElement('span');
+                myPrice.textContent = `My Cost: ${(item.currentValue * .000000013).toFixed(3)}$`;
+                myPrice.classList.add('item-value');
+
                 itemDiv.appendChild(name);
                 itemDiv.appendChild(currentValue);
                 itemDiv.appendChild(gems);
+                itemDiv.appendChild(myPrice);
                 itemList.appendChild(itemDiv);
             });
         }
