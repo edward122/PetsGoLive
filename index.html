@@ -199,11 +199,11 @@
                 myPrice.classList.add('item-value');
 
                 const eBayDoublePriceInd = document.createElement('span');
-                eBayDoublePriceInd.textContent = `Indivdual Ebay DP: ${(item.currentValue * .000000015).toFixed(3) * 2 * 1.22}$`;
+                eBayDoublePriceInd.textContent = `Indivdual Ebay DP: ${((item.currentValue * .000000015) * 2 * 1.22).toFixed(3)}$`;
                 eBayDoublePriceInd.classList.add('item-value');
 
                 const eBayDoublePriceMain = document.createElement('span');
-                eBayDoublePriceMain.textContent = `Main Ebay DP: ${(item.currentValue * .000000015).toFixed(3) * 2 * 1.42}$`;
+                eBayDoublePriceMain.textContent = `Main Ebay DP: ${((item.currentValue * .000000015) * 2 * 1.42).toFixed(3)}$`;
                 eBayDoublePriceMain.classList.add('item-value');
 
                 itemDiv.appendChild(name);
