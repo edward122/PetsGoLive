@@ -195,13 +195,23 @@
                 gems.textContent = `Gems Margin: ${formatNumber(item.gemsMargin)}`;
 
                 const myPrice = document.createElement('span');
-                myPrice.textContent = `My Cost: ${(item.currentValue * .000000013).toFixed(3)}$`;
+                myPrice.textContent = `My Cost: ${(item.currentValue * .000000015).toFixed(3)}$`;
                 myPrice.classList.add('item-value');
+
+                const eBayDoublePriceInd = document.createElement('span');
+                eBayDoublePriceInd.textContent = `Indivdual Ebay DP: ${(item.currentValue * .000000015).toFixed(3) * 2 * 1.22}$`;
+                eBayDoublePriceInd.classList.add('item-value');
+
+                const eBayDoublePriceMain = document.createElement('span');
+                eBayDoublePriceMain.textContent = `Main Ebay DP: ${(item.currentValue * .000000015).toFixed(3) * 2 * 1.42}$`;
+                eBayDoublePriceMain.classList.add('item-value');
 
                 itemDiv.appendChild(name);
                 itemDiv.appendChild(currentValue);
                 itemDiv.appendChild(gems);
                 itemDiv.appendChild(myPrice);
+                itemDiv.appendChild(eBayDoublePriceInd);
+                itemDiv.appendChild(eBayDoublePriceMain);
                 itemList.appendChild(itemDiv);
             });
         }
